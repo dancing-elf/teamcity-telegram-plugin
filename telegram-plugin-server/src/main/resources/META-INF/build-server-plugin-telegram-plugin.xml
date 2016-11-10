@@ -3,5 +3,12 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
        default-autowire="constructor">
-    <bean id="telegramNotifier" class="com.notononoto.teamcity.telegram.TelegramNotificator"/>
+    <bean id="telegramNotifier"
+          class="com.notononoto.teamcity.telegram.TelegramNotificator"/>
+    <bean id="telegramSettingsManager"
+          class="com.notononoto.teamcity.telegram.config.TelegramSettingsManager"/>
+    <bean id="telegramSettingsPage"
+          class="com.notononoto.teamcity.telegram.web.TelegramSettingsPage"/>
+    <bean id="telegramSettingsController"
+          class="com.notononoto.teamcity.telegram.web.TelegramSettingsController"/>
 </beans>

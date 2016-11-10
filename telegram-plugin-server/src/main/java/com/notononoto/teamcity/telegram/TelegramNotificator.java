@@ -1,5 +1,7 @@
 package com.notononoto.teamcity.telegram;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.notononoto.teamcity.telegram.config.TelegramSettingsManager;
 import jetbrains.buildServer.Build;
 import jetbrains.buildServer.notification.NotificatorAdapter;
 import jetbrains.buildServer.notification.NotificatorRegistry;
@@ -23,12 +25,17 @@ import java.util.Set;
 /** Telegram notifier */
 public class TelegramNotificator extends NotificatorAdapter {
 
+  private static final Logger LOG = Logger.getInstance(TelegramNotificator.class.getName());
+
   /** User input field at notification rules tab */
   private static List<UserPropertyInfo> USER_PROPERTIES = Collections.singletonList(
-      new UserPropertyInfo("telegram-account", "Telegram account"));
+      new UserPropertyInfo("telegram-chat-id", "Telegram chat id"));
+  private final TelegramSettingsManager settingsManager;
 
 
-  public TelegramNotificator(@NotNull NotificatorRegistry registry) {
+  public TelegramNotificator(@NotNull NotificatorRegistry registry,
+                             @NotNull TelegramSettingsManager settingsManager) {
+    this.settingsManager = settingsManager;
     registry.register(this, USER_PROPERTIES);
   }
 
@@ -168,7 +175,8 @@ public class TelegramNotificator extends NotificatorAdapter {
 
   }
 
-  private void sendNotification(@NotNull Set<SUser> users, @NotNull String messsage) {
-
+  private void sendNotification(@NotNull Set<SUser> users, @NotNull String message) {
+    LOG.info(message);
+    LOG.info(settingsManager.toString());
   }
 }
