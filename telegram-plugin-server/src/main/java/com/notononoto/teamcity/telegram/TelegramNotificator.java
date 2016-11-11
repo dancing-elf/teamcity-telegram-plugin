@@ -1,8 +1,8 @@
 package com.notononoto.teamcity.telegram;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.notononoto.teamcity.telegram.config.TelegramSettingsManager;
 import jetbrains.buildServer.Build;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.notification.NotificatorAdapter;
 import jetbrains.buildServer.notification.NotificatorRegistry;
 import jetbrains.buildServer.responsibility.ResponsibilityEntry;
@@ -11,44 +11,64 @@ import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.mute.MuteInfo;
 import jetbrains.buildServer.serverSide.problems.BuildProblemInfo;
 import jetbrains.buildServer.tests.TestName;
+import jetbrains.buildServer.users.NotificatorPropertyKey;
+import jetbrains.buildServer.users.PropertyKey;
 import jetbrains.buildServer.users.SUser;
+import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.vcs.VcsRoot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 /** Telegram notifier */
 public class TelegramNotificator extends NotificatorAdapter {
 
-  private static final Logger LOG = Logger.getInstance(TelegramNotificator.class.getName());
+  /**
+   * In {@link Loggers} doesn't exists NOTIFIER entry. Package renaming to
+   * jetbrains.buildServer something very strange. But maybe it's required...
+   * So don't use this log here too active...
+   */
+  private static final Logger LOG = Loggers.SERVER;
+
+  /** Inner property name */
+  private static final String CHAT_ID_PROP = "telegram-chat-id";
+  /** Notificator type */
+  private static final String NOTIFICATOR_TYPE = "telegram";
+
+  /** Property key description */
+  private static final PropertyKey TELEGRAM_PROP_KEY =
+      new NotificatorPropertyKey(NOTIFICATOR_TYPE, CHAT_ID_PROP);
 
   /** User input field at notification rules tab */
   private static List<UserPropertyInfo> USER_PROPERTIES = Collections.singletonList(
-      new UserPropertyInfo("telegram-chat-id", "Telegram chat id"));
-  private final TelegramSettingsManager settingsManager;
+      new UserPropertyInfo(CHAT_ID_PROP, "Telegram chat id", null,
+          (UserPropertyValidator) (propertyValue, editee, currentUserData) ->
+              StringUtil.isNumber(propertyValue) ? null : "Chat id should be a number"));
+
+
+  /** Telegram bot manager */
+  private final TelegramBotManager botManager;
 
 
   public TelegramNotificator(@NotNull NotificatorRegistry registry,
-                             @NotNull TelegramSettingsManager settingsManager) {
-    this.settingsManager = settingsManager;
+                             @NotNull TelegramBotManager botManager) {
+    this.botManager = botManager;
     registry.register(this, USER_PROPERTIES);
   }
 
   @NotNull
   @Override
   public String getNotificatorType() {
-    return "Telegram notifier";
+    return NOTIFICATOR_TYPE;
   }
 
   @NotNull
   @Override
   public String getDisplayName() {
-    return "telegram";
+    return "Telegram Notifier";
   }
 
   @Override
@@ -176,7 +196,27 @@ public class TelegramNotificator extends NotificatorAdapter {
   }
 
   private void sendNotification(@NotNull Set<SUser> users, @NotNull String message) {
-    LOG.info(message);
-    LOG.info(settingsManager.toString());
+    LOG.debug("Send to telegram message: " +
+        StringUtil.truncateStringValueWithDotsAtEnd(message, 80));
+    collectChatIds(users).forEach(chatId -> {
+      try {
+        botManager.sendMessage(chatId, message);
+      } catch (Exception ex) {
+        LOG.warnAndDebugDetails("Can't send message to chatId='" + chatId + "'", ex);
+      }
+    });
+  }
+
+  /**
+   * @param users telegram users
+   * @return users ids without duplicates
+   */
+  private List<Long> collectChatIds(@NotNull Set<SUser> users) {
+    return users.stream().
+        map(user -> user.getPropertyValue(TELEGRAM_PROP_KEY)).
+        filter(Objects::nonNull).
+        map(Long::parseLong).
+        distinct().
+        collect(Collectors.toList());
   }
 }

@@ -3,7 +3,7 @@
                  xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-plugin-v1-xml">
   <info>
     <name>telegram-plugin</name>
-    <display-name>telegram-plugin</display-name>
+    <display-name>telegram plugin</display-name>
     <version>@Version@</version>
     <description>Teamcity plugin for telegram</description>
     <email>notononoto@gmail.com</email>

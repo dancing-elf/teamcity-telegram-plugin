@@ -2,9 +2,11 @@ package com.notononoto.teamcity.telegram.config;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.JDOMUtil;
+import com.notononoto.teamcity.telegram.TelegramBotManager;
 import jetbrains.buildServer.configuration.ChangeListener;
 import jetbrains.buildServer.configuration.ChangeObserver;
 import jetbrains.buildServer.configuration.FileWatcher;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.ServerPaths;
 import jetbrains.buildServer.util.FileUtil;
 import org.jdom.Document;
@@ -13,28 +15,38 @@ import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /** Settings manager */
 public class TelegramSettingsManager implements ChangeListener {
 
-  private static final Logger LOG = Logger.getInstance(TelegramSettingsManager.class.getName());
+  private static final Logger LOG = Loggers.SERVER;
 
   /** Fields names in xml */
   private static final String BOT_NAME_ATTR = "bot-name";
   private static final String BOT_TOKEN_ATTR = "bot-token";
 
+  private static final String CONFIG_FILE_NAME = "telegram-config.xml";
+
   /** Configuration file */
   private final Path configFile;
   /** Check file system changes */
   private final ChangeObserver changeObserver;
+  /** Telegram bot manager */
+  private final TelegramBotManager botManager;
   /** Plugin settings */
   private TelegramSettings settings;
 
-  public TelegramSettingsManager(@NotNull ServerPaths paths) {
-    configFile = Paths.get(paths.getConfigDir() + "_notifications").
-        resolve("telegram").resolve("telegram-config.xml");
+  public TelegramSettingsManager(@NotNull ServerPaths paths,
+                                 @NotNull TelegramBotManager botManager) {
+    Path configDir = Paths.get(paths.getConfigDir()).resolve("_notifications").
+        resolve("telegram");
+    configFile = configDir.resolve(CONFIG_FILE_NAME);
+    this.botManager = botManager;
+
+    initResources(configDir);
     reloadConfiguration();
 
     changeObserver = new FileWatcher(configFile.toFile());
@@ -56,16 +68,17 @@ public class TelegramSettingsManager implements ChangeListener {
    * Save configuration on disk
    * @param newSettings {@link TelegramSettings}
    */
-  public void saveConfiguration(@NotNull TelegramSettings newSettings) {
+  public synchronized void saveConfiguration(@NotNull TelegramSettings newSettings) {
     changeObserver.runActionWithDisabledObserver(() ->
         FileUtil.processXmlFile(configFile.toFile(), (root) -> {
           root.setAttribute(BOT_NAME_ATTR, newSettings.getBotName());
           root.setAttribute(BOT_TOKEN_ATTR, newSettings.getBotToken());
         }));
     settings = newSettings;
+    botManager.reloadIfNeeded(settings);
   }
 
-  private void reloadConfiguration() {
+  private synchronized void reloadConfiguration() {
     LOG.info("Loading configuration file: " + configFile);
     Document document = parseFile(configFile);
     // Don't kill all system. Telegram don't enough important.
@@ -76,9 +89,25 @@ public class TelegramSettingsManager implements ChangeListener {
     settings = new TelegramSettings(
         rootElement.getAttributeValue(BOT_NAME_ATTR),
         rootElement.getAttributeValue(BOT_TOKEN_ATTR));
+    botManager.reloadIfNeeded(settings);
   }
 
-  private Document parseFile(Path configFile) {
+  private void initResources(@NotNull Path configDir) {
+    try {
+      Files.createDirectories(configDir);
+      copyResourceIfNotExists(configDir, CONFIG_FILE_NAME);
+      copyResourceIfNotExists(configDir, "telegram-config.dtd");
+    } catch (IOException ex) {
+      LOG.error("Failed to create telegram plugin config directory", ex);
+    }
+  }
+
+  private void copyResourceIfNotExists(@NotNull Path configDir, @NotNull String name) {
+    FileUtil.copyResourceIfNotExists(this.getClass(),
+        "/telegram_templates/" + name, configDir.resolve(name).toFile());
+  }
+
+  private Document parseFile(@NotNull Path configFile) {
     try {
       return JDOMUtil.loadDocument(configFile.toFile());
     } catch (JDOMException | IOException ex) {

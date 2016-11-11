@@ -27,8 +27,8 @@ public class TelegramSettingsPage extends AdminPage {
                               @NotNull PluginDescriptor descriptor,
                               @NotNull TelegramSettingsManager settingsManager) {
     super(places);
-    setPluginName("telegram-notifier");
-    setTabTitle("Telegram notifier");
+    setPluginName("telegram");
+    setTabTitle("Telegram Notifier");
     setIncludeUrl(descriptor.getPluginResourcesPath("telegramSettings.jsp"));
     setPosition(PositionConstraint.after("email", "jabber"));
     register();

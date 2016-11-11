@@ -11,4 +11,7 @@
           class="com.notononoto.teamcity.telegram.web.TelegramSettingsPage"/>
     <bean id="telegramSettingsController"
           class="com.notononoto.teamcity.telegram.web.TelegramSettingsController"/>
+    <bean id="telegramBotManager"
+          class="com.notononoto.teamcity.telegram.TelegramBotManager"
+          destroy-method="destroy"/>
 </beans>

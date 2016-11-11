@@ -10,11 +10,11 @@
   <packaging>jar</packaging>
   <dependencies>
 
-    <!--<dependency>-->
-      <!--<groupId>org.telegram</groupId>-->
-      <!--<artifactId>telegrambots</artifactId>-->
-      <!--<version>2.4.0</version>-->
-    <!--</dependency>-->
+    <dependency>
+      <groupId>com.github.pengrad</groupId>
+      <artifactId>java-telegram-bot-api</artifactId>
+      <version>2.1.4</version>
+    </dependency>
 
     <dependency>
       <groupId>org.jetbrains.teamcity</groupId>
