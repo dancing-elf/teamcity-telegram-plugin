@@ -68,10 +68,14 @@ public class TelegramBotManager {
     }
   }
 
+  @Nullable
   public BotInfo requestDescription(@NotNull TelegramSettings settings) {
     TelegramBot bot = TelegramBotAdapter.build(settings.getBotToken());
     GetMeResponse response = bot.execute(new GetMe());
     User user = response.user();
+    if (user == null) {
+      return null;
+    }
     return new BotInfo(user.firstName(), user.username());
   }
 

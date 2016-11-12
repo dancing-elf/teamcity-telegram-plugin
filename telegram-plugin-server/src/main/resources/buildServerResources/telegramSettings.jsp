@@ -44,8 +44,8 @@
                 <tr>
                     <th><label for="botToken">Bot token: <l:star/></label></th>
                     <td>
-                        <forms:textField name="botToken"
-                                         value="${telegramSettings.botToken}"/>
+                        <forms:passwordField name="botToken"
+                                             encryptedPassword="${telegramSettings.encryptedBotToken}"/>
                         <span class="error" id="errorBotToken"></span>
                     </td>
                 </tr>
@@ -55,6 +55,8 @@
                 <forms:submit type="submit" label="Save"/>
                 <forms:submit id="testConnection" type="button" label="Test connection"/>
                 <input type="hidden" id="submitSettings" name="submitSettings" value="store"/>
+                <input type="hidden" id="publicKey"
+                       name="publicKey" value="<c:out value='${telegramSettings.hexEncodedPublicKey}'/>"/>
                 <forms:saving/>
             </div>
         </div>

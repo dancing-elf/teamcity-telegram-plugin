@@ -3,6 +3,8 @@ package com.notononoto.teamcity.telegram.web;
 import com.notononoto.teamcity.telegram.config.TelegramSettings;
 import jetbrains.buildServer.controllers.RememberState;
 import jetbrains.buildServer.controllers.StateField;
+import jetbrains.buildServer.serverSide.crypt.RSACipher;
+import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -29,6 +31,18 @@ public class TelegramSettingsBean extends RememberState {
 
   public void setBotToken(String botToken) {
     this.botToken = botToken;
+  }
+
+  public String getHexEncodedPublicKey() {
+    return RSACipher.getHexEncodedPublicKey();
+  }
+
+  public String getEncryptedBotToken() {
+    return StringUtil.isEmpty(botToken) ? "" : RSACipher.encryptDataForWeb(botToken);
+  }
+
+  public void setEncryptedBotToken(String encrypted) {
+    this.botToken = RSACipher.decryptWebRequestData(encrypted);
   }
 
   public boolean isPaused() {

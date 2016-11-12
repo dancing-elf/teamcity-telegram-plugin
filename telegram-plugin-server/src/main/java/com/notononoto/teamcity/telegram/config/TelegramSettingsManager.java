@@ -10,6 +10,7 @@ import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.ServerPaths;
 import jetbrains.buildServer.serverSide.crypt.EncryptUtil;
 import jetbrains.buildServer.util.FileUtil;
+import jetbrains.buildServer.util.StringUtil;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 
 /** Settings manager */
 public class TelegramSettingsManager implements ChangeListener {
@@ -73,7 +75,8 @@ public class TelegramSettingsManager implements ChangeListener {
     changeObserver.runActionWithDisabledObserver(() ->
         FileUtil.processXmlFile(configFile.toFile(), (root) -> {
           String rawToken = newSettings.getBotToken();
-          String token = isEmpty(rawToken) ? rawToken : EncryptUtil.scramble(rawToken);
+          String token = StringUtil.isEmptyOrSpaces(rawToken) ?
+              rawToken : EncryptUtil.scramble(rawToken);
           root.setAttribute(BOT_TOKEN_ATTR, token);
           root.setAttribute(PAUSE_ATTR, Boolean.toString(newSettings.isPaused()));
         }));
@@ -91,17 +94,13 @@ public class TelegramSettingsManager implements ChangeListener {
 
     Element rootElement = document.getRootElement();
     String token = rootElement.getAttributeValue(BOT_TOKEN_ATTR);
-    if (!isEmpty(token)) {
+    if (!StringUtil.isEmptyOrSpaces(token)) {
       token = EncryptUtil.unscramble(token);
     }
     boolean pause = Boolean.parseBoolean(rootElement.getAttributeValue(PAUSE_ATTR));
 
     settings = new TelegramSettings(token, pause);
     botManager.reloadIfNeeded(settings);
-  }
-
-  private boolean isEmpty(String str) {
-    return str == null || str.trim().isEmpty();
   }
 
   private void initResources(@NotNull Path configDir) {

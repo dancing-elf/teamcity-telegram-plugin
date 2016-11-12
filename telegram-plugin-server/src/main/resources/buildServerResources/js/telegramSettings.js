@@ -19,13 +19,13 @@ Telegram.SettingsForm = OO.extend(BS.AbstractPasswordForm, {
     /** This method required for teamcity javascript events support (data changed and etc) */
     storeInSession: function() {
         $("submitSettings").value = 'storeInSession';
-        BS.FormSaver.save(this, this.formElement().action, BS.StoreInSessionListener);
+        BS.PasswordFormSaver.save(this, this.formElement().action, BS.StoreInSessionListener);
     },
 
     submitSettings: function() {
         $("submitSettings").value = 'store';
         this.removeUpdateStateHandlers();
-        BS.FormSaver.save(this, this.formElement().action,
+        BS.PasswordFormSaver.save(this, this.formElement().action,
             OO.extend(BS.ErrorsAwareListener, this.createErrorListener()));
         return false;
     },

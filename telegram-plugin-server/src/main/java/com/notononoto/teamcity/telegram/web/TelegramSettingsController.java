@@ -5,12 +5,10 @@ import com.notononoto.teamcity.telegram.BotInfo;
 import com.notononoto.teamcity.telegram.TelegramBotManager;
 import com.notononoto.teamcity.telegram.config.TelegramSettings;
 import com.notononoto.teamcity.telegram.config.TelegramSettingsManager;
-import jetbrains.buildServer.controllers.ActionErrors;
-import jetbrains.buildServer.controllers.BaseFormXmlController;
-import jetbrains.buildServer.controllers.FormUtil;
-import jetbrains.buildServer.controllers.XmlResponseUtil;
+import jetbrains.buildServer.controllers.*;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.util.ExceptionUtil;
+import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +22,8 @@ import javax.servlet.http.HttpServletResponse;
  * Plugin servlet. Should handle writing of settings.
  */
 public class TelegramSettingsController extends BaseFormXmlController {
+
+  private static final Logger LOG = Loggers.SERVER;
 
   private static final String REQUEST_TYPE_PROP_NAME = "submitSettings";
 
@@ -62,6 +62,11 @@ public class TelegramSettingsController extends BaseFormXmlController {
       return;
     }
 
+    if (PublicKeyUtil.isPublicKeyExpired(request)) {
+      PublicKeyUtil.writePublicKeyExpiredError(xmlResponse);
+      return;
+    }
+
     TelegramSettingsBean bean = new TelegramSettingsBean(settingsManager.getSettings());
     FormUtil.bindFromRequest(request, bean);
     TelegramSettings newSettings = new TelegramSettings(bean.getBotToken(), bean.isPaused());
@@ -94,11 +99,12 @@ public class TelegramSettingsController extends BaseFormXmlController {
     try {
       BotInfo info = botManager.requestDescription(settings);
       if (info == null) {
-        return "bot is not active";
+        return "Can't find data about bot with requested token";
       }
       return "bot name: " + info.getName() + "\n" +
              "bot username: " + info.getUsername();
     } catch (Exception ex) {
+      LOG.info("Can't send test message to Telegram: ", ex);
       return "Can't send test message to Telegram:\n" +
           ExceptionUtil.getDisplayMessage(ex);
     }
@@ -106,14 +112,10 @@ public class TelegramSettingsController extends BaseFormXmlController {
 
   private ActionErrors validate(@NotNull TelegramSettings settings) {
     ActionErrors errors = new ActionErrors();
-    if (!isValidString(settings.getBotToken())) {
+    if (StringUtil.isEmptyOrSpaces(settings.getBotToken())) {
       errors.addError("emptyBotToken", "Bot token must not be empty");
     }
     return errors;
-  }
-
-  private boolean isValidString(String str) {
-    return str != null && !str.trim().isEmpty();
   }
 
   private boolean isStoreInSessionRequest(HttpServletRequest request) {
