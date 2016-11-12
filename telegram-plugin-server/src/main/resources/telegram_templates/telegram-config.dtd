@@ -1,5 +1,5 @@
 <!ELEMENT telegram EMPTY>
 <!ATTLIST telegram
-  bot-name CDATA #REQUIRED
+  paused CDATA #REQUIRED
   bot-token CDATA #REQUIRED
 >

@@ -1,23 +1,40 @@
 package com.notononoto.teamcity.telegram.config;
 
+import java.util.Objects;
+
+
 /** Plugin settings */
 public class TelegramSettings {
 
-  /** Name of bot */
-  private final String botName;
   /** Bot's token */
   private final String botToken;
+  /** Bot state */
+  private final boolean paused;
 
-  public TelegramSettings(String botName, String botToken) {
-    this.botName = botName;
+  public TelegramSettings(String botToken, boolean paused) {
     this.botToken = botToken;
-  }
-
-  public String getBotName() {
-    return botName;
+    this.paused = paused;
   }
 
   public String getBotToken() {
     return botToken;
+  }
+
+  public boolean isPaused() {
+    return paused;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TelegramSettings that = (TelegramSettings) o;
+    return paused == that.paused &&
+        Objects.equals(botToken, that.botToken);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(botToken, paused);
   }
 }

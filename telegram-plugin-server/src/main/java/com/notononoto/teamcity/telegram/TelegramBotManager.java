@@ -7,15 +7,16 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.TelegramBotAdapter;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.model.User;
+import com.pengrad.telegrambot.request.GetMe;
 import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.response.GetMeResponse;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
@@ -26,6 +27,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * because new users must send at least one message to bot. Otherwise
  * bot will not be able to send a messages to this users because Telegram
  * prohibits it.
+ * We use synchronized methods in this class. Of course, read-write lock
+ * can get best performance, but it's not important here.
  */
 public class TelegramBotManager {
 
@@ -35,33 +38,22 @@ public class TelegramBotManager {
   private TelegramSettings settings;
   /** Request executor */
   private TelegramBot bot;
-  /**
-   * {@link #reloadIfNeeded} and {@link #sendMessage} can have a race.
-   * {@link #sendMessage} can be invoked from many threads, so using
-   * read-write lock.
-   */
-  private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
   /**
    * Reload bot if settings changed
    * @param newSettings updated user settings
    */
-  public void reloadIfNeeded(@NotNull TelegramSettings newSettings) {
+  public synchronized void reloadIfNeeded(@NotNull TelegramSettings newSettings) {
     if (!isBotChanged(newSettings, settings)) {
       LOG.debug("Telegram bot token has not changed");
       return;
     }
     LOG.debug("New telegram bot token is received: " +
-        StringUtil.truncateStringValueWithDotsAtEnd(newSettings.getBotToken(), 6));
-    lock.writeLock().lock();
-    try {
-      this.settings = newSettings;
-      cleanupBot();
-      if (settings.getBotToken() != null) {
-        bot = createBot(settings.getBotToken());
-      }
-    } finally {
-      lock.writeLock().unlock();
+    StringUtil.truncateStringValueWithDotsAtEnd(newSettings.getBotToken(), 6));
+    this.settings = newSettings;
+    cleanupBot();
+    if (settings.getBotToken() != null && !settings.isPaused()) {
+      bot = createBot(settings.getBotToken());
     }
   }
 
@@ -70,24 +62,21 @@ public class TelegramBotManager {
    * @param chatId client identifier
    * @param message text to send
    */
-  public void sendMessage(long chatId, @NotNull String message) {
-    lock.readLock().lock();
-    try {
-      if (bot != null) {
-        bot.execute(new SendMessage(chatId, message));
-      }
-    } finally {
-      lock.readLock().unlock();
+  public synchronized void sendMessage(long chatId, @NotNull String message) {
+    if (bot != null) {
+      bot.execute(new SendMessage(chatId, message));
     }
   }
 
-  public void destroy() {
-    lock.writeLock().lock();
-    try {
-      cleanupBot();
-    } finally {
-      lock.writeLock().unlock();
-    }
+  public BotInfo requestDescription(@NotNull TelegramSettings settings) {
+    TelegramBot bot = TelegramBotAdapter.build(settings.getBotToken());
+    GetMeResponse response = bot.execute(new GetMe());
+    User user = response.user();
+    return new BotInfo(user.firstName(), user.username());
+  }
+
+  public synchronized void destroy() {
+    cleanupBot();
   }
 
   private void cleanupBot() {
@@ -100,8 +89,7 @@ public class TelegramBotManager {
 
   private boolean isBotChanged(@NotNull TelegramSettings newSettings,
                                @Nullable TelegramSettings oldSettings) {
-    return oldSettings == null ||
-        !Objects.equals(newSettings.getBotToken(), oldSettings.getBotToken());
+    return !Objects.equals(newSettings, oldSettings);
   }
 
   private TelegramBot createBot(@NotNull String botToken) {

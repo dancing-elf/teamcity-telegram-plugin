@@ -8,6 +8,7 @@ import jetbrains.buildServer.configuration.ChangeObserver;
 import jetbrains.buildServer.configuration.FileWatcher;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.serverSide.ServerPaths;
+import jetbrains.buildServer.serverSide.crypt.EncryptUtil;
 import jetbrains.buildServer.util.FileUtil;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -25,8 +26,8 @@ public class TelegramSettingsManager implements ChangeListener {
   private static final Logger LOG = Loggers.SERVER;
 
   /** Fields names in xml */
-  private static final String BOT_NAME_ATTR = "bot-name";
   private static final String BOT_TOKEN_ATTR = "bot-token";
+  private static final String PAUSE_ATTR = "paused";
 
   private static final String CONFIG_FILE_NAME = "telegram-config.xml";
 
@@ -71,8 +72,10 @@ public class TelegramSettingsManager implements ChangeListener {
   public synchronized void saveConfiguration(@NotNull TelegramSettings newSettings) {
     changeObserver.runActionWithDisabledObserver(() ->
         FileUtil.processXmlFile(configFile.toFile(), (root) -> {
-          root.setAttribute(BOT_NAME_ATTR, newSettings.getBotName());
-          root.setAttribute(BOT_TOKEN_ATTR, newSettings.getBotToken());
+          String rawToken = newSettings.getBotToken();
+          String token = isEmpty(rawToken) ? rawToken : EncryptUtil.scramble(rawToken);
+          root.setAttribute(BOT_TOKEN_ATTR, token);
+          root.setAttribute(PAUSE_ATTR, Boolean.toString(newSettings.isPaused()));
         }));
     settings = newSettings;
     botManager.reloadIfNeeded(settings);
@@ -85,11 +88,20 @@ public class TelegramSettingsManager implements ChangeListener {
     if (document == null) {
       return;
     }
+
     Element rootElement = document.getRootElement();
-    settings = new TelegramSettings(
-        rootElement.getAttributeValue(BOT_NAME_ATTR),
-        rootElement.getAttributeValue(BOT_TOKEN_ATTR));
+    String token = rootElement.getAttributeValue(BOT_TOKEN_ATTR);
+    if (!isEmpty(token)) {
+      token = EncryptUtil.unscramble(token);
+    }
+    boolean pause = Boolean.parseBoolean(rootElement.getAttributeValue(PAUSE_ATTR));
+
+    settings = new TelegramSettings(token, pause);
     botManager.reloadIfNeeded(settings);
+  }
+
+  private boolean isEmpty(String str) {
+    return str == null || str.trim().isEmpty();
   }
 
   private void initResources(@NotNull Path configDir) {

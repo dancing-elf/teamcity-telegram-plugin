@@ -1,6 +1,5 @@
 package com.notononoto.teamcity.telegram.web;
 
-import com.notononoto.teamcity.telegram.config.TelegramSettings;
 import com.notononoto.teamcity.telegram.config.TelegramSettingsManager;
 import jetbrains.buildServer.controllers.admin.AdminPage;
 import jetbrains.buildServer.serverSide.auth.Permission;
@@ -12,13 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
+
 /** Information about page rendering and reading of settings */
 public class TelegramSettingsPage extends AdminPage {
 
-  // Names of settings properties in web request/response. Maybe
-  // in future they shout be placed in separate class or enum...
-  public static final String BOT_NAME = "bot_name";
-  public static final String BOT_TOKEN = "bot_token";
+  // Name of settings property in web request/response.
+  public static final String SETTINGS_NAME = "telegramSettings";
+  // Plugin name in url
+  public static final String PLUGIN_NAME = "telegram";
 
 
   private final TelegramSettingsManager settingsManager;
@@ -27,7 +27,7 @@ public class TelegramSettingsPage extends AdminPage {
                               @NotNull PluginDescriptor descriptor,
                               @NotNull TelegramSettingsManager settingsManager) {
     super(places);
-    setPluginName("telegram");
+    setPluginName(PLUGIN_NAME);
     setTabTitle("Telegram Notifier");
     setIncludeUrl(descriptor.getPluginResourcesPath("telegramSettings.jsp"));
     setPosition(PositionConstraint.after("email", "jabber"));
@@ -50,8 +50,6 @@ public class TelegramSettingsPage extends AdminPage {
   @Override
   public void fillModel(@NotNull Map<String, Object> model, @NotNull HttpServletRequest request) {
     super.fillModel(model, request);
-    TelegramSettings settings = settingsManager.getSettings();
-    model.put(BOT_NAME, settings.getBotName());
-    model.put(BOT_TOKEN, settings.getBotToken());
+    model.put(SETTINGS_NAME, new TelegramSettingsBean(settingsManager.getSettings()));
   }
 }

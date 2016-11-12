@@ -1,37 +1,94 @@
+<%@ include file="/include.jsp" %>
+<%@ taglib prefix="admin" tagdir="/WEB-INF/tags/admin" %>
+<%@ taglib prefix="forms" tagdir="/WEB-INF/tags/forms" %>
 
-<%@ include file="/include.jsp"%>
-
+<jsp:useBean id="telegramSettings"
+             scope="request"
+             type="com.notononoto.teamcity.telegram.web.TelegramSettingsBean"/>
+<bs:linkCSS dynamic="${true}">
+    /css/admin/adminMain.css
+    /css/admin/serverConfig.css
+</bs:linkCSS>
+<bs:linkScript>
+    /js/bs/testConnection.js
+    /plugins/telegram-plugin/js/telegramSettings.js
+</bs:linkScript>
 <script type="text/javascript">
-    function saveSettings(form) {
-        var botName = form.botName.value;
-        var botToken = form.botToken.value;
-        BS.ajaxRequest($('settingsForm').action, {
-            parameters: 'bot_name=' + botName + '&bot_token=' + botToken,
-            onComplete: function(transport) {
-                if (transport.responseXML) {
-                    $('settingsContainer').refresh();
-                }
-            }
-        });
-    }
+    $j(function() {
+        Telegram.SettingsForm.setupEventHandlers();
+    });
 </script>
 
-<bs:refreshable containerId="settingsContainer" pageUrl="${pageUrl}">
-    <c:url var="url" value="/saveTelegramSettings.html"/>
-    <form action="${url}" id="settingsForm" method="POST" >
-        <table class="runnerFormTable">
-            <tbody>
-            <tr>
-                <th><label for="botName">Bot name: <span class="mandatoryAsterix" title="Mandatory field">*</span></label></th>
-                <td><input type="text" name="botName" value="${bot_name}" class="textField" /></td>
-            </tr>
-            <tr>
-                <th><label for="botToken">Bot token: <span class="mandatoryAsterix" title="Mandatory field">*</span></label></th>
-                <td><input type="text" name="botToken" value="${bot_token}" class="textField"/></td>
-            </tr>
-            </tbody>
-        </table>
-        <input type="button" value="Save" class="btn btn_primary submitButton" onClick="saveSettings(this.form)"/>
+<c:url var="url" value="/telegram/notifierSettings.html"/>
+<div id="settingsContainer">
+    <form action="${url}" method="post" onsubmit="return Telegram.SettingsForm.submitSettings()" autocomplete="off">
+        <div class="editNotificatorSettingsPage">
+            <c:choose>
+                <c:when test="${telegramSettings.paused}">
+                    <div class="headerNote">
+                        <span class="icon icon16 build-status-icon build-status-icon_paused"></span>
+                        The notifier is <strong>disabled</strong>. All telegram notifications are suspended&nbsp;&nbsp;
+                        <a class="btn btn_mini" href="#" id="enable-btn">Enable</a>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="enableNote">
+                        The notifier is <strong>enabled</strong>&nbsp;&nbsp;
+                        <a class="btn btn_mini" href="#" id="disable-btn">Disable</a>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+
+            <bs:messages key="settingsSaved"/>
+            <table class="runnerFormTable">
+                <tr>
+                    <th><label for="botToken">Bot token: <l:star/></label></th>
+                    <td>
+                        <forms:textField name="botToken"
+                                         value="${telegramSettings.botToken}"/>
+                        <span class="error" id="errorBotToken"></span>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="saveButtonsBlock">
+                <forms:submit type="submit" label="Save"/>
+                <forms:submit id="testConnection" type="button" label="Test connection"/>
+                <input type="hidden" id="submitSettings" name="submitSettings" value="store"/>
+                <forms:saving/>
+            </div>
+        </div>
     </form>
-    <bs:messages key="msg"/>
-</bs:refreshable>
+</div>
+
+<bs:dialog dialogId="testConnectionDialog"
+           title="Test Connection"
+           closeCommand="BS.TestConnectionDialog.close();"
+           closeAttrs="showdiscardchangesmessage='false'">
+    <div id="testConnectionStatus"></div>
+    <div id="testConnectionDetails" class="mono"></div>
+</bs:dialog>
+<forms:modified/>
+
+<script type="text/javascript">
+    (function($) {
+        var sendAction = function(enable) {
+            $.post("${url}?action=" + (enable ? 'enable' : 'disable'), function() {
+                BS.reload(true);
+            });
+            // looks like Teamcity should support very old browsers so don't use
+            // event.preventDefault() but return boolean from click event...
+            return false;
+        };
+
+        $("#enable-btn").click(function() {
+            return sendAction(true);
+        });
+
+        $("#disable-btn").click(function() {
+            if (!confirm("Telegram notifications will not be sent until enabled. Disable the notifier?"))
+                return false;
+            return sendAction(false);
+        })
+    })(jQuery);
+</script>
