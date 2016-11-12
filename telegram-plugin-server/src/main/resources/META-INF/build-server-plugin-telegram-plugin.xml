@@ -9,6 +9,8 @@
           class="com.notononoto.teamcity.telegram.config.TelegramSettingsManager"/>
     <bean id="telegramSettingsPage"
           class="com.notononoto.teamcity.telegram.web.TelegramSettingsPage"/>
+    <bean id="userTelegramSettingsExtension"
+          class="com.notononoto.teamcity.telegram.web.UserTelegramSettingsExtension"/>
     <bean id="telegramSettingsController"
           class="com.notononoto.teamcity.telegram.web.TelegramSettingsController"/>
     <bean id="telegramBotManager"

@@ -39,7 +39,7 @@ public class TelegramNotificator extends NotificatorAdapter {
   private static final String NOTIFICATOR_TYPE = "telegram";
 
   /** Property key description */
-  private static final PropertyKey TELEGRAM_PROP_KEY =
+  public static final PropertyKey TELEGRAM_PROP_KEY =
       new NotificatorPropertyKey(NOTIFICATOR_TYPE, CHAT_ID_PROP);
 
   /** User input field at notification rules tab */
