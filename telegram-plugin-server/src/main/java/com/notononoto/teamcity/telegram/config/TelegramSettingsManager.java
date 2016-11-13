@@ -35,6 +35,8 @@ public class TelegramSettingsManager implements ChangeListener {
 
   /** Configuration file */
   private final Path configFile;
+  /** Configuration directory */
+  private final Path configDir;
   /** Check file system changes */
   private final ChangeObserver changeObserver;
   /** Telegram bot manager */
@@ -43,13 +45,15 @@ public class TelegramSettingsManager implements ChangeListener {
   private TelegramSettings settings;
 
   public TelegramSettingsManager(@NotNull ServerPaths paths,
-                                 @NotNull TelegramBotManager botManager) {
-    Path configDir = Paths.get(paths.getConfigDir()).resolve("_notifications").
+                                 @NotNull TelegramBotManager botManager)
+      throws JDOMException, IOException {
+
+    configDir = Paths.get(paths.getConfigDir()).resolve("_notifications").
         resolve("telegram");
     configFile = configDir.resolve(CONFIG_FILE_NAME);
     this.botManager = botManager;
 
-    initResources(configDir);
+    initResources();
     reloadConfiguration();
 
     changeObserver = new FileWatcher(configFile.toFile());
@@ -60,11 +64,21 @@ public class TelegramSettingsManager implements ChangeListener {
 
   @Override
   public void changeOccured(String requestor) {
-    this.reloadConfiguration();
+    try {
+      reloadConfiguration();
+    } catch (IOException | JDOMException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
+  @NotNull
   public TelegramSettings getSettings() {
     return settings;
+  }
+
+  @NotNull
+  public Path getSettingsDir() {
+    return configDir;
   }
 
   /**
@@ -84,13 +98,9 @@ public class TelegramSettingsManager implements ChangeListener {
     botManager.reloadIfNeeded(settings);
   }
 
-  private synchronized void reloadConfiguration() {
+  private synchronized void reloadConfiguration() throws JDOMException, IOException {
     LOG.info("Loading configuration file: " + configFile);
-    Document document = parseFile(configFile);
-    // Don't kill all system. Telegram don't enough important.
-    if (document == null) {
-      return;
-    }
+    Document document = JDOMUtil.loadDocument(configFile.toFile());
 
     Element rootElement = document.getRootElement();
     String token = rootElement.getAttributeValue(BOT_TOKEN_ATTR);
@@ -103,11 +113,29 @@ public class TelegramSettingsManager implements ChangeListener {
     botManager.reloadIfNeeded(settings);
   }
 
-  private void initResources(@NotNull Path configDir) {
+  private void initResources() {
     try {
       Files.createDirectories(configDir);
       copyResourceIfNotExists(configDir, CONFIG_FILE_NAME);
       copyResourceIfNotExists(configDir, "telegram-config.dtd");
+      copyResourceIfNotExists(configDir, "build_failed.ftl");
+      copyResourceIfNotExists(configDir, "build_failed_to_start.ftl");
+      copyResourceIfNotExists(configDir, "build_failing.ftl");
+      copyResourceIfNotExists(configDir, "build_probably_hanging.ftl");
+      copyResourceIfNotExists(configDir, "build_problem_responsibility_assigned_to_me.ftl");
+      copyResourceIfNotExists(configDir, "build_problem_responsibility_changed.ftl");
+      copyResourceIfNotExists(configDir, "build_problems_muted.ftl");
+      copyResourceIfNotExists(configDir, "build_problems_unmuted.ftl");
+      copyResourceIfNotExists(configDir, "build_started.ftl");
+      copyResourceIfNotExists(configDir, "build_successful.ftl");
+      copyResourceIfNotExists(configDir, "build_type_responsibility_assigned_to_me.ftl");
+      copyResourceIfNotExists(configDir, "build_type_responsibility_changed.ftl");
+      copyResourceIfNotExists(configDir, "common.ftl");
+      copyResourceIfNotExists(configDir, "labeling_failed.ftl");
+      copyResourceIfNotExists(configDir, "multiple_test_responsibility_assigned_to_me.ftl");
+      copyResourceIfNotExists(configDir, "multiple_test_responsibility_changed.ftl");
+      copyResourceIfNotExists(configDir, "mute.ftl");
+      copyResourceIfNotExists(configDir, "responsibility.ftl");
     } catch (IOException ex) {
       LOG.error("Failed to create telegram plugin config directory", ex);
     }
@@ -116,14 +144,5 @@ public class TelegramSettingsManager implements ChangeListener {
   private void copyResourceIfNotExists(@NotNull Path configDir, @NotNull String name) {
     FileUtil.copyResourceIfNotExists(this.getClass(),
         "/telegram_templates/" + name, configDir.resolve(name).toFile());
-  }
-
-  private Document parseFile(@NotNull Path configFile) {
-    try {
-      return JDOMUtil.loadDocument(configFile.toFile());
-    } catch (JDOMException | IOException ex) {
-      LOG.error("Failed to parse telegram configuration file: " + configFile, ex);
-      return null;
-    }
   }
 }

@@ -49,14 +49,24 @@
                         <span class="error" id="errorBotToken"></span>
                     </td>
                 </tr>
+                <tr class="noBorder">
+                    <td colspan="2">
+                        The templates for Telegram notifications
+                        <a target="_blank"
+                           href="<bs:helpUrlPrefix/>/Customizing+Notifications"
+                           showdiscardchangesmessage="false">
+                            can be customized
+                        </a>.
+                    </td>
+                </tr>
             </table>
 
             <div class="saveButtonsBlock">
                 <forms:submit type="submit" label="Save"/>
                 <forms:submit id="testConnection" type="button" label="Test connection"/>
                 <input type="hidden" id="submitSettings" name="submitSettings" value="store"/>
-                <input type="hidden" id="publicKey"
-                       name="publicKey" value="<c:out value='${telegramSettings.hexEncodedPublicKey}'/>"/>
+                <input type="hidden" id="publicKey" name="publicKey"
+                       value="<c:out value='${telegramSettings.hexEncodedPublicKey}'/>"/>
                 <forms:saving/>
             </div>
         </div>
