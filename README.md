@@ -1,4 +1,4 @@
-# teamcity-telegram-plugin
+# Telegram Notifier
 TeamCity notifications for Telegram messenger
 
 ## Installation
