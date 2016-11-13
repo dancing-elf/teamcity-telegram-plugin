@@ -1,5 +1,5 @@
 # teamcity-telegram-plugin
-Teamcity notifications for Telegram messager
+TeamCity notifications for Telegram messenger
 
 ## Installation
 To install plugin [download zip archive](https://github.com/dancing-elf/teamcity-telegram-plugin/releases) it and copy it to Teamcity \<data directory\>/plugins (it is $HOME/.BuildServer/plugins under Linux and C:\ProgramData\JetBrains\TeamCity\plugins under Windows).
