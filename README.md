@@ -29,3 +29,4 @@ contains you chat id. Add that chat id under profile page.
    Of course plugin can simply use same templates from jabber config 
    directory directly, but it's strange.
 2. Managing build start from Telegram application.
+3. Right know I don't understand how to properly test Teamcity plugins.
