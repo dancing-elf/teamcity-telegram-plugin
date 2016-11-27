@@ -2,9 +2,9 @@ package com.notononoto.teamcity.telegram;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.notononoto.teamcity.telegram.config.TelegramSettings;
-import com.pengrad.telegrambot.GetUpdatesListener;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.TelegramBotAdapter;
+import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.User;
@@ -13,9 +13,14 @@ import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.GetMeResponse;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.util.StringUtil;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.util.StringUtils;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.Objects;
 
 
@@ -37,23 +42,25 @@ public class TelegramBotManager {
   /** Plugin settings */
   private TelegramSettings settings;
   /** Request executor */
-  private TelegramBot bot;
+  private volatile TelegramBot bot;
 
   /**
    * Reload bot if settings changed
    * @param newSettings updated user settings
    */
   public synchronized void reloadIfNeeded(@NotNull TelegramSettings newSettings) {
-    if (!isBotChanged(newSettings, settings)) {
-      LOG.debug("Telegram bot token has not changed");
+    if (Objects.equals(newSettings, settings)) {
+      LOG.debug("Telegram bot token settings has not changed");
       return;
     }
     LOG.debug("New telegram bot token is received: " +
-    StringUtil.truncateStringValueWithDotsAtEnd(newSettings.getBotToken(), 6));
+            StringUtil.truncateStringValueWithDotsAtEnd(newSettings.getBotToken(), 6));
     this.settings = newSettings;
     cleanupBot();
     if (settings.getBotToken() != null && !settings.isPaused()) {
-      bot = createBot(settings.getBotToken());
+      TelegramBot newBot = createBot(settings);
+      addUpdatesListener(newBot);
+      bot = newBot;
     }
   }
 
@@ -70,7 +77,7 @@ public class TelegramBotManager {
 
   @Nullable
   public BotInfo requestDescription(@NotNull TelegramSettings settings) {
-    TelegramBot bot = TelegramBotAdapter.build(settings.getBotToken());
+    TelegramBot bot = createBot(settings);
     GetMeResponse response = bot.execute(new GetMe());
     User user = response.user();
     if (user == null) {
@@ -91,14 +98,27 @@ public class TelegramBotManager {
     }
   }
 
-  private boolean isBotChanged(@NotNull TelegramSettings newSettings,
-                               @Nullable TelegramSettings oldSettings) {
-    return !Objects.equals(newSettings, oldSettings);
+  private TelegramBot createBot(@NotNull TelegramSettings settings) {
+    OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    if (settings.isUseProxy()) {
+      builder.proxy(new Proxy(Proxy.Type.HTTP,
+          new InetSocketAddress(settings.getProxyServer(), settings.getProxyPort())));
+      if (!StringUtils.isEmpty(settings.getProxyUsername()) &&
+          !StringUtils.isEmpty(settings.getProxyPassword())) {
+        builder.proxyAuthenticator((route, response) -> {
+          String credential =
+              Credentials.basic(settings.getProxyUsername(), settings.getProxyPassword());
+          return response.request().newBuilder()
+              .header("Proxy-Authorization", credential)
+              .build();
+        });
+      }
+    }
+    return TelegramBotAdapter.buildCustom(settings.getBotToken(), builder.build());
   }
 
-  private TelegramBot createBot(@NotNull String botToken) {
-    TelegramBot bot = TelegramBotAdapter.build(botToken);
-    bot.setGetUpdatetsListener(updates -> {
+  private void addUpdatesListener(TelegramBot bot) {
+    bot.setUpdatesListener(updates -> {
       for (Update update: updates) {
         Message message = update.message();
         Long chatId = message.chat().id();
@@ -108,8 +128,7 @@ public class TelegramBotManager {
                 "please add this chat id in your Teamcity settings");
         bot.execute(msg);
       }
-      return GetUpdatesListener.CONFIRMED_UPDATES_ALL;
+      return UpdatesListener.CONFIRMED_UPDATES_ALL;
     });
-    return bot;
   }
 }

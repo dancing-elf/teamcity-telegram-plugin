@@ -8,6 +8,7 @@
 <bs:linkCSS dynamic="${true}">
     /css/admin/adminMain.css
     /css/admin/serverConfig.css
+    /plugins/telegram-plugin/css/telegramSettings.css
 </bs:linkCSS>
 <bs:linkScript>
     /js/bs/testConnection.js
@@ -47,6 +48,44 @@
                         <forms:passwordField name="botToken"
                                              encryptedPassword="${telegramSettings.encryptedBotToken}"/>
                         <span class="error" id="errorBotToken"></span>
+                    </td>
+                </tr>
+                <tr class="groupingTitle">
+                    <td colspan="2">Proxy settings</td>
+                </tr>
+                <tr>
+                    <th><label for="useProxy">Use proxy: </label></th>
+                    <td><forms:checkbox name="useProxy" checked="${telegramSettings.useProxy}"/>
+                </tr>
+                <tr>
+                    <th><label for="proxyServer">Server: </label></th>
+                    <td>
+                        <forms:textField name="proxyServer" value="${telegramSettings.proxyServer}"/>
+                        <span class="smallNote">Optional. Provide if proxy enabled.</span>
+                        <span class="error" id="errorProxyServer"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="proxyPort">Port: </label></th>
+                    <td>
+                        <forms:textField name="proxyPort" value="${telegramSettings.proxyPort}"/>
+                        <span class="smallNote">Optional. Provide if proxy enabled.</span>
+                        <span class="error" id="errorProxyPort"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="proxyUsername">Username: </label></th>
+                    <td>
+                        <forms:textField name="proxyUsername" value="${telegramSettings.proxyUsername}"/>
+                        <span class="smallNote">Optional. Provide if proxy enabled and requires authentication.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="proxyPassword">Password: </label></th>
+                    <td>
+                        <forms:passwordField name="proxyPassword"
+                                             encryptedPassword="${telegramSettings.encryptedProxyPassword}"/>
+                        <span class="smallNote">Optional. Provide if proxy enabled and requires authentication.</span>
                     </td>
                 </tr>
                 <tr class="noBorder">
@@ -101,6 +140,6 @@
             if (!confirm("Telegram notifications will not be sent until enabled. Disable the notifier?"))
                 return false;
             return sendAction(false);
-        })
+        });
     })(jQuery);
 </script>

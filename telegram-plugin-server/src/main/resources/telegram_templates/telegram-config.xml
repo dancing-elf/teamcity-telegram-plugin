@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE telegram SYSTEM "telegram-config.dtd">
 
-<telegram bot-name="" bot-token=""/>
+<telegram bot-token="" paused="false" use-proxy="false"
+          proxy-server="" proxy-port="" proxy-username="" proxy-password=""/>

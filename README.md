@@ -28,6 +28,4 @@ contains you chat id. Add that chat id under profile page.
    problem. But in any case I hope I will be able to know it soon.
    Of course plugin can simply use same templates from jabber config 
    directory directly, but it's strange.
-2. Maybe some users need proxy to connect to Telegram server from Teamcity
-   machine. Right now proxy is not supported :( Please write an issue if
-   you need that.
+2. Managing build start from Telegram application.

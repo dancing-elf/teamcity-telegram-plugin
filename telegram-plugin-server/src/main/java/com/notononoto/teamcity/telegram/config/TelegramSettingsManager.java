@@ -31,6 +31,12 @@ public class TelegramSettingsManager implements ChangeListener {
   private static final String BOT_TOKEN_ATTR = "bot-token";
   private static final String PAUSE_ATTR = "paused";
 
+  private static final String USE_PROXY_ATTR = "use-proxy";
+  private static final String PROXY_SERVER_ATTR = "proxy-server";
+  private static final String PROXY_PORT_ATTR = "proxy-port";
+  private static final String PROXY_USERNAME_ATTR = "proxy-username";
+  private static final String PROXY_PASSWORD_ATTR = "proxy-password";
+
   private static final String CONFIG_FILE_NAME = "telegram-config.xml";
 
   /** Configuration file */
@@ -88,11 +94,13 @@ public class TelegramSettingsManager implements ChangeListener {
   public synchronized void saveConfiguration(@NotNull TelegramSettings newSettings) {
     changeObserver.runActionWithDisabledObserver(() ->
         FileUtil.processXmlFile(configFile.toFile(), (root) -> {
-          String rawToken = newSettings.getBotToken();
-          String token = StringUtil.isEmptyOrSpaces(rawToken) ?
-              rawToken : EncryptUtil.scramble(rawToken);
-          root.setAttribute(BOT_TOKEN_ATTR, token);
+          root.setAttribute(BOT_TOKEN_ATTR, scramble(newSettings.getBotToken()));
           root.setAttribute(PAUSE_ATTR, Boolean.toString(newSettings.isPaused()));
+          root.setAttribute(USE_PROXY_ATTR, Boolean.toString(newSettings.isUseProxy()));
+          root.setAttribute(PROXY_SERVER_ATTR, newSettings.getProxyServer());
+          root.setAttribute(PROXY_PORT_ATTR, storeInteger(newSettings.getProxyPort()));
+          root.setAttribute(PROXY_USERNAME_ATTR, newSettings.getProxyUsername());
+          root.setAttribute(PROXY_PASSWORD_ATTR, scramble(newSettings.getProxyPassword()));
         }));
     settings = newSettings;
     botManager.reloadIfNeeded(settings);
@@ -102,14 +110,18 @@ public class TelegramSettingsManager implements ChangeListener {
     LOG.info("Loading configuration file: " + configFile);
     Document document = JDOMUtil.loadDocument(configFile.toFile());
 
-    Element rootElement = document.getRootElement();
-    String token = rootElement.getAttributeValue(BOT_TOKEN_ATTR);
-    if (!StringUtil.isEmptyOrSpaces(token)) {
-      token = EncryptUtil.unscramble(token);
-    }
-    boolean pause = Boolean.parseBoolean(rootElement.getAttributeValue(PAUSE_ATTR));
+    Element root = document.getRootElement();
 
-    settings = new TelegramSettings(token, pause);
+    TelegramSettings newSettings = new TelegramSettings();
+    newSettings.setBotToken(unscramble(root.getAttributeValue(BOT_TOKEN_ATTR)));
+    newSettings.setPaused(Boolean.parseBoolean(root.getAttributeValue(PAUSE_ATTR)));
+    newSettings.setUseProxy(Boolean.parseBoolean(root.getAttributeValue(USE_PROXY_ATTR)));
+    newSettings.setProxyServer(root.getAttributeValue(PROXY_SERVER_ATTR));
+    newSettings.setProxyPort(restoreInteger(root.getAttributeValue(PROXY_PORT_ATTR)));
+    newSettings.setProxyUsername(root.getAttributeValue(PROXY_PASSWORD_ATTR));
+    newSettings.setProxyPassword(unscramble(root.getAttributeValue(PROXY_PASSWORD_ATTR)));
+
+    settings = newSettings;
     botManager.reloadIfNeeded(settings);
   }
 
@@ -144,5 +156,22 @@ public class TelegramSettingsManager implements ChangeListener {
   private void copyResourceIfNotExists(@NotNull Path configDir, @NotNull String name) {
     FileUtil.copyResourceIfNotExists(this.getClass(),
         "/telegram_templates/" + name, configDir.resolve(name).toFile());
+  }
+
+  private String scramble(String str) {
+    return StringUtil.isEmpty(str) ? str : EncryptUtil.scramble(str);
+  }
+
+  private String unscramble(String str) {
+    return StringUtil.isEmpty(str) ? str : EncryptUtil.unscramble(str);
+  }
+
+  private String storeInteger(Integer integer) {
+    // using empty string because null is not valid jdom value
+    return integer == null ? "" : Integer.toString(integer);
+  }
+
+  private Integer restoreInteger(String str) {
+    return StringUtil.isEmpty(str) ? null : Integer.valueOf(str);
   }
 }

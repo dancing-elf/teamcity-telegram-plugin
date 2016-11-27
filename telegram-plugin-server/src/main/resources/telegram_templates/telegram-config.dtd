@@ -1,5 +1,10 @@
 <!ELEMENT telegram EMPTY>
 <!ATTLIST telegram
-  paused CDATA #REQUIRED
   bot-token CDATA #REQUIRED
+  paused CDATA #REQUIRED
+  use-proxy CDATA #REQUIRED
+  proxy-server CDATA #REQUIRED
+  proxy-port CDATA #REQUIRED
+  proxy-username CDATA #REQUIRED
+  proxy-password CDATA #REQUIRED
 >

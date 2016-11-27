@@ -12,6 +12,7 @@ import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -69,17 +70,16 @@ public class TelegramSettingsController extends BaseFormXmlController {
 
     TelegramSettingsBean bean = new TelegramSettingsBean(settingsManager.getSettings());
     FormUtil.bindFromRequest(request, bean);
-    TelegramSettings newSettings = new TelegramSettings(bean.getBotToken(), bean.isPaused());
     if (isStoreInSessionRequest(request)) {
       XmlResponseUtil.writeFormModifiedIfNeeded(xmlResponse, bean);
     } else {
-      ActionErrors errors = validate(newSettings);
+      ActionErrors errors = validate(bean);
       if (errors.hasNoErrors()) {
         if (isTestConnectionRequest(request)) {
-          String testResult = testSettings(newSettings);
+          String testResult = testSettings(bean.toSettings());
           XmlResponseUtil.writeTestResult(xmlResponse, testResult);
         } else {
-          settingsManager.saveConfiguration(newSettings);
+          settingsManager.saveConfiguration(bean.toSettings());
           FormUtil.removeAllFromSession(request.getSession(), bean.getClass());
           writeRedirect(xmlResponse, request.getContextPath() +
               "/admin/admin.html?item=" + TelegramSettingsPage.PLUGIN_NAME);
@@ -91,7 +91,8 @@ public class TelegramSettingsController extends BaseFormXmlController {
 
   private void changePauseState(boolean pause) {
     TelegramSettings oldSettings = settingsManager.getSettings();
-    TelegramSettings newSettings = new TelegramSettings(oldSettings.getBotToken(), pause);
+    TelegramSettings newSettings = new TelegramSettings(oldSettings);
+    newSettings.setPaused(pause);
     settingsManager.saveConfiguration(newSettings);
   }
 
@@ -110,10 +111,23 @@ public class TelegramSettingsController extends BaseFormXmlController {
     }
   }
 
-  private ActionErrors validate(@NotNull TelegramSettings settings) {
+  private ActionErrors validate(@NotNull TelegramSettingsBean settings) {
     ActionErrors errors = new ActionErrors();
     if (StringUtil.isEmptyOrSpaces(settings.getBotToken())) {
       errors.addError("emptyBotToken", "Bot token must not be empty");
+    }
+    if (settings.isUseProxy()) {
+      if (StringUtils.isEmpty(settings.getProxyServer())) {
+        errors.addError("emptyProxyServer", "Proxy server must not be empty");
+      }
+      if (StringUtils.isEmpty(settings.getProxyPort())) {
+        errors.addError("emptyProxyPort", "Proxy port must not be empty");
+      }
+    }
+    String port = settings.getProxyPort();
+    if (!StringUtils.isEmpty(port) &&
+        (!StringUtil.isNumber(port) || Integer.valueOf(port) < 1 || Integer.valueOf(port) > 65535)) {
+      errors.addError("badProxyPort", "Proxy port must be integer between 1 and 65535");
     }
     return errors;
   }
