@@ -19,7 +19,7 @@ More information about creation of bots you can find in [Telegram documentation]
 Telegram bot can't send messages by username or to user who never write to it.
 So when Teamcity is running send **any** message to bot. Response should
 contains you chat id. Add that chat id under profile page.
-![admin page](/images/profile_page.png?raw=true)
+![profile page](/images/profile_page.png?raw=true)
 
 ## TODO
 1. This sources contains freemarker templates from Teamcity Jabber plugin.
