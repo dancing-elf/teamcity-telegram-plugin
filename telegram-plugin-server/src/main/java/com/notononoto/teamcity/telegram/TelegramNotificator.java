@@ -70,7 +70,7 @@ public class TelegramNotificator extends NotificatorAdapter {
   private static List<UserPropertyInfo> USER_PROPERTIES = Collections.singletonList(
       new UserPropertyInfo(CHAT_ID_PROP, "Telegram chat id", null,
           (UserPropertyValidator) (propertyValue, editee, currentUserData) ->
-              editee == null || StringUtil.isNumber(propertyValue) ?
+              StringUtil.isEmpty(propertyValue) || TelegramNotificator.isLong(propertyValue) ?
                   null : "Chat id should be a number"));
 
   /**
@@ -313,8 +313,7 @@ public class TelegramNotificator extends NotificatorAdapter {
         // looks like new Teamcity don't validate input with validator in user properties
         // so we should check input before send (TW-47469). It's fixed at bugtrack but looks like
         // it's still reproducing...
-        .map(String::trim)
-        .filter(StringUtil::isNumber)
+        .filter(TelegramNotificator::isLong)
         .map(Long::parseLong)
         .distinct()
         .collect(Collectors.toList());
@@ -328,5 +327,14 @@ public class TelegramNotificator extends NotificatorAdapter {
     cfg.setTemplateUpdateDelay(TeamCityProperties.getInteger(
         "teamcity.notification.template.update.interval", 60));
     return cfg;
+  }
+
+  private static boolean isLong(@NotNull String value) {
+    try {
+      Long.parseLong(value);
+      return true;
+    } catch (NumberFormatException ex) {
+      return false;
+    }
   }
 }
