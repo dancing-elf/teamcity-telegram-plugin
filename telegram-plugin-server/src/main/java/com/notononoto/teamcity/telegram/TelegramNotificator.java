@@ -3,7 +3,10 @@ package com.notononoto.teamcity.telegram;
 import com.intellij.openapi.diagnostic.Logger;
 import com.notononoto.teamcity.telegram.config.TelegramSettingsManager;
 import freemarker.core.Environment;
-import freemarker.template.*;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
 import jetbrains.buildServer.Build;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.notification.NotificatorAdapter;
@@ -30,7 +33,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-/** Telegram notifier */
+/**
+ * Telegram notifier
+ */
 public class TelegramNotificator extends NotificatorAdapter {
 
   /**
@@ -40,28 +45,45 @@ public class TelegramNotificator extends NotificatorAdapter {
    */
   private static final Logger LOG = Loggers.SERVER;
 
-  /** Name of message variable in FreeMarker context after template execution */
+  /**
+   * Name of message variable in FreeMarker context after template execution
+   */
   private static final String FREE_MARKER_MSG_KEY = "message";
-  /** Inner property name */
+  /**
+   * Inner property name
+   */
   private static final String CHAT_ID_PROP = "telegram-chat-id";
-  /** Notificator type */
+  /**
+   * Notificator type
+   */
   private static final String NOTIFICATOR_TYPE = "telegram";
 
-  /** Property key description */
+  /**
+   * Property key description
+   */
   public static final PropertyKey TELEGRAM_PROP_KEY =
       new NotificatorPropertyKey(NOTIFICATOR_TYPE, CHAT_ID_PROP);
 
-  /** User input field at notification rules tab */
+  /**
+   * User input field at notification rules tab
+   */
   private static List<UserPropertyInfo> USER_PROPERTIES = Collections.singletonList(
       new UserPropertyInfo(CHAT_ID_PROP, "Telegram chat id", null,
           (UserPropertyValidator) (propertyValue, editee, currentUserData) ->
-              StringUtil.isNumber(propertyValue) ? null : "Chat id should be a number"));
+              editee == null || StringUtil.isNumber(propertyValue) ?
+                  null : "Chat id should be a number"));
 
-  /** Telegram bot manager */
+  /**
+   * Telegram bot manager
+   */
   private final TelegramBotManager botManager;
-  /** FreeMarker message builder */
+  /**
+   * FreeMarker message builder
+   */
   private final TemplateMessageBuilder messageBuilder;
-  /** Templates files config dir */
+  /**
+   * Templates files config dir
+   */
   private final Configuration freeMarkerConfig;
 
   public TelegramNotificator(@NotNull NotificatorRegistry registry,
@@ -116,7 +138,7 @@ public class TelegramNotificator extends NotificatorAdapter {
   public void notifyLabelingFailed(@NotNull Build build, @NotNull VcsRoot root,
                                    @NotNull Throwable exception, @NotNull Set<SUser> users) {
     Map<String, Object> props = messageBuilder.
-        getLabelingFailedMap((SBuild)build, root, exception, users);
+        getLabelingFailedMap((SBuild) build, root, exception, users);
     sendNotification(props, users, "labeling_failed");
   }
 
@@ -246,8 +268,9 @@ public class TelegramNotificator extends NotificatorAdapter {
 
   /**
    * Send notifications to telegram users
-   * @param props template parameters
-   * @param users users to send messages
+   *
+   * @param props        template parameters
+   * @param users        users to send messages
    * @param templateName template name
    */
   private void sendNotification(@NotNull Map<String, Object> props,
@@ -284,12 +307,17 @@ public class TelegramNotificator extends NotificatorAdapter {
    * @return users ids without duplicates
    */
   private List<Long> collectChatIds(@NotNull Set<SUser> users) {
-    return users.stream().
-        map(user -> user.getPropertyValue(TELEGRAM_PROP_KEY)).
-        filter(Objects::nonNull).
-        map(Long::parseLong).
-        distinct().
-        collect(Collectors.toList());
+    return users.stream()
+        .map(user -> user.getPropertyValue(TELEGRAM_PROP_KEY))
+        .filter(Objects::nonNull)
+        // looks like new Teamcity don't validate input with validator in user properties
+        // so we should check input before send (TW-47469). It's fixed at bugtrack but looks like
+        // it's still reproducing...
+        .map(String::trim)
+        .filter(StringUtil::isNumber)
+        .map(Long::parseLong)
+        .distinct()
+        .collect(Collectors.toList());
   }
 
   private Configuration createFreeMarkerConfig(@NotNull Path configDir) throws IOException {
