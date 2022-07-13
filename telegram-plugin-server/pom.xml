@@ -13,28 +13,27 @@
     <dependency>
       <groupId>com.github.pengrad</groupId>
       <artifactId>java-telegram-bot-api</artifactId>
-      <version>3.0.1</version>
+      <version>6.1.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.jetbrains.teamcity</groupId>
       <artifactId>server-api</artifactId>
-      <version>${teamcity-version}</version>
+      <version>2021.2</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.jetbrains.teamcity</groupId>
-      <artifactId>server-web-api</artifactId>
-      <version>${teamcity-version}</version>
-      <type>war</type>
+      <artifactId>agent-api</artifactId>
+      <version>2021.2</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.jetbrains.teamcity</groupId>
       <artifactId>tests-support</artifactId>
-      <version>${teamcity-version}</version>
+      <version>2021.2</version>
       <scope>test</scope>
     </dependency>
 
