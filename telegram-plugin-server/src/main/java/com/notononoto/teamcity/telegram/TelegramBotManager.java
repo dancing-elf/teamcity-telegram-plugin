@@ -120,6 +120,9 @@ public class TelegramBotManager {
     bot.setUpdatesListener(updates -> {
       for (Update update: updates) {
         Message message = update.message();
+        if (message == null) {
+          continue;
+        }
         Long chatId = message.chat().id();
         SendMessage msg = new SendMessage(chatId,
             "Hello! Your chat id is '" + chatId + "'.\n" +
