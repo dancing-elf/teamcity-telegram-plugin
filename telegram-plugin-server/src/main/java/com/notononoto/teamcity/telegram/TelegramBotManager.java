@@ -3,7 +3,6 @@ package com.notononoto.teamcity.telegram;
 import com.intellij.openapi.diagnostic.Logger;
 import com.notononoto.teamcity.telegram.config.TelegramSettings;
 import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.TelegramBotAdapter;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
@@ -114,7 +113,7 @@ public class TelegramBotManager {
         });
       }
     }
-    return TelegramBotAdapter.buildCustom(settings.getBotToken(), builder.build());
+    return new TelegramBot(settings.getBotToken());
   }
 
   private void addUpdatesListener(TelegramBot bot) {
