@@ -132,7 +132,7 @@ public class TelegramBotManager {
         }
         Long chatId = message.chat().id();
         SendMessage msg = buildMsg(chatId,
-            "Hello! Your chat id is '%s" + chatId + "'.\n" +
+            "Hello! Your chat id is '" + chatId + "'.\n" +
                 "If you want to receive notifications about Teamcity events " +
                 "please add this chat id in your Teamcity settings");
         bot.execute(msg);
