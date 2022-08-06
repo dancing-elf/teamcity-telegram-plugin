@@ -1,8 +1,7 @@
 package com.notononoto.teamcity.telegram.config;
 
-import com.pengrad.telegrambot.model.request.ParseMode;
-
-import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -21,8 +20,7 @@ public class TelegramSettings {
   private Integer proxyPort;
   private String proxyUsername;
   private String proxyPassword;
-  @Nullable
-  private ParseMode parseMode;
+  private TelegramParseMode parseMode = TelegramParseMode.NONE;
 
   public TelegramSettings() {
   }
@@ -94,13 +92,16 @@ public class TelegramSettings {
     this.paused = paused;
   }
 
-  @Nullable
-  public ParseMode getParseMode() {
+  public TelegramParseMode getParseMode() {
     return parseMode;
   }
 
-  public void setParseMode(@Nullable ParseMode parseMode) {
+  public void setParseMode(TelegramParseMode parseMode) {
     this.parseMode = parseMode;
+  }
+
+  public List<TelegramParseMode> getAllParseModes() {
+    return Arrays.asList(TelegramParseMode.values());
   }
 
   @Override

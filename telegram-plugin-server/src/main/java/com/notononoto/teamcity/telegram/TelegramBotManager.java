@@ -7,6 +7,7 @@ import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.User;
+import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.GetMe;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.GetMeResponse;
@@ -142,8 +143,9 @@ public class TelegramBotManager {
 
   private SendMessage buildMsg(Long chatId, String message) {
     SendMessage sendMessage = new SendMessage(chatId, message);
-    if (settings.getParseMode() != null) {
-      sendMessage.parseMode(settings.getParseMode());
+    ParseMode parseMode = settings.getParseMode().getParseMode();
+    if (parseMode != null) {
+      sendMessage.parseMode(parseMode);
     }
     return sendMessage;
   }
