@@ -1,19 +1,28 @@
 package com.notononoto.teamcity.telegram.config;
 
+import com.pengrad.telegrambot.model.request.ParseMode;
+
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 
-/** Plugin settings */
+/**
+ * Plugin settings
+ */
 public class TelegramSettings {
 
   private String botToken;
-  /** Bot state */
+  /**
+   * Bot state
+   */
   private boolean paused;
   private boolean useProxy;
   private String proxyServer;
   private Integer proxyPort;
   private String proxyUsername;
   private String proxyPassword;
+  @Nullable
+  private ParseMode parseMode;
 
   public TelegramSettings() {
   }
@@ -26,6 +35,7 @@ public class TelegramSettings {
     proxyPort = settings.getProxyPort();
     proxyUsername = settings.getProxyUsername();
     proxyPassword = settings.getProxyPassword();
+    parseMode = settings.getParseMode();
   }
 
   public String getBotToken() {
@@ -84,23 +94,33 @@ public class TelegramSettings {
     this.paused = paused;
   }
 
+  @Nullable
+  public ParseMode getParseMode() {
+    return parseMode;
+  }
+
+  public void setParseMode(@Nullable ParseMode parseMode) {
+    this.parseMode = parseMode;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TelegramSettings that = (TelegramSettings) o;
     return useProxy == that.useProxy &&
-            paused == that.paused &&
-            Objects.equals(botToken, that.botToken) &&
-            Objects.equals(proxyServer, that.proxyServer) &&
-            Objects.equals(proxyPort, that.proxyPort) &&
-            Objects.equals(proxyUsername, that.proxyUsername) &&
-            Objects.equals(proxyPassword, that.proxyPassword);
+        paused == that.paused &&
+        Objects.equals(botToken, that.botToken) &&
+        Objects.equals(proxyServer, that.proxyServer) &&
+        Objects.equals(proxyPort, that.proxyPort) &&
+        Objects.equals(proxyUsername, that.proxyUsername) &&
+        Objects.equals(proxyPassword, that.proxyPassword) &&
+        Objects.equals(parseMode, that.parseMode);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(botToken, useProxy, proxyServer, proxyPort,
-            proxyUsername, proxyPassword, paused);
+        proxyUsername, proxyPassword, paused, parseMode);
   }
 }

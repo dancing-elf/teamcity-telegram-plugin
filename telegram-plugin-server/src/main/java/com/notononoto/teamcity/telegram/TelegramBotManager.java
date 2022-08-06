@@ -38,13 +38,18 @@ public class TelegramBotManager {
 
   private static final Logger LOG = Loggers.SERVER;
 
-  /** Plugin settings */
+  /**
+   * Plugin settings
+   */
   private TelegramSettings settings;
-  /** Request executor */
+  /**
+   * Request executor
+   */
   private volatile TelegramBot bot;
 
   /**
    * Reload bot if settings changed
+   *
    * @param newSettings updated user settings
    */
   public synchronized void reloadIfNeeded(@NotNull TelegramSettings newSettings) {
@@ -53,7 +58,7 @@ public class TelegramBotManager {
       return;
     }
     LOG.debug("New telegram bot token is received: " +
-            StringUtil.truncateStringValueWithDotsAtEnd(newSettings.getBotToken(), 6));
+        StringUtil.truncateStringValueWithDotsAtEnd(newSettings.getBotToken(), 6));
     this.settings = newSettings;
     cleanupBot();
     if (settings.getBotToken() != null && !settings.isPaused()) {
@@ -65,12 +70,13 @@ public class TelegramBotManager {
 
   /**
    * Send message to client
-   * @param chatId client identifier
+   *
+   * @param chatId  client identifier
    * @param message text to send
    */
   public synchronized void sendMessage(long chatId, @NotNull String message) {
     if (bot != null) {
-      bot.execute(new SendMessage(chatId, message));
+      bot.execute(buildMsg(chatId, message));
     }
   }
 
@@ -118,19 +124,27 @@ public class TelegramBotManager {
 
   private void addUpdatesListener(TelegramBot bot) {
     bot.setUpdatesListener(updates -> {
-      for (Update update: updates) {
+      for (Update update : updates) {
         Message message = update.message();
         if (message == null) {
           continue;
         }
         Long chatId = message.chat().id();
-        SendMessage msg = new SendMessage(chatId,
-            "Hello! Your chat id is '" + chatId + "'.\n" +
+        SendMessage msg = buildMsg(chatId,
+            "Hello! Your chat id is '%s" + chatId + "'.\n" +
                 "If you want to receive notifications about Teamcity events " +
                 "please add this chat id in your Teamcity settings");
         bot.execute(msg);
       }
       return UpdatesListener.CONFIRMED_UPDATES_ALL;
     });
+  }
+
+  private SendMessage buildMsg(Long chatId, String message) {
+    SendMessage sendMessage = new SendMessage(chatId, message);
+    if (settings.getParseMode() != null) {
+      sendMessage.parseMode(settings.getParseMode());
+    }
+    return sendMessage;
   }
 }

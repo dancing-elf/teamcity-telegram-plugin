@@ -126,7 +126,7 @@ public class TelegramSettingsController extends BaseFormXmlController {
     }
     String port = settings.getProxyPort();
     if (!StringUtils.isEmpty(port) &&
-        (!StringUtil.isNumber(port) || Integer.valueOf(port) < 1 || Integer.valueOf(port) > 65535)) {
+        (!StringUtil.isNumber(port) || Integer.parseInt(port) < 1 || Integer.parseInt(port) > 65535)) {
       errors.addError("badProxyPort", "Proxy port must be integer between 1 and 65535");
     }
     return errors;
