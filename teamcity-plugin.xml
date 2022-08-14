@@ -9,6 +9,7 @@
     <email>notononoto@gmail.com</email>
     <vendor>
       <name>dancing-elf</name>
+      <url>https://github.com/dancing-elf/teamcity-telegram-plugin</url>
     </vendor>
   </info>
   <deployment use-separate-classloader="true" />
