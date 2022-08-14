@@ -4,7 +4,7 @@
   <parent>
     <artifactId>telegram-plugin</artifactId>
     <groupId>com.notononoto.teamcity.telegram</groupId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
   </parent>
   <artifactId>build</artifactId>
   <packaging>pom</packaging>
@@ -18,7 +18,7 @@
       <dependency>
            <groupId>com.notononoto.teamcity.telegram</groupId>
            <artifactId>telegram-plugin-server</artifactId>
-           <version>1.0-SNAPSHOT</version>
+           <version>1.1-SNAPSHOT</version>
       </dependency>
   </dependencies>
   <build>
@@ -65,7 +65,7 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>telegram-plugin</finalName>
+                  <finalName>telegram-notifier</finalName>
                   <outputDirectory>${project.parent.build.directory}</outputDirectory>
                   <appendAssemblyId>false</appendAssemblyId>
                   <descriptors>

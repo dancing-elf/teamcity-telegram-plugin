@@ -5,7 +5,7 @@
     <parent>
         <artifactId>telegram-plugin</artifactId>
         <groupId>com.notononoto.teamcity.telegram</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.1-SNAPSHOT</version>
     </parent>
     <artifactId>telegram-plugin-server</artifactId>
     <packaging>jar</packaging>
